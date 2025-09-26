@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>民族文化博物馆 | 单页面应用</title>
+    <meta name="description" content="探索 56 个民族的文化瑰宝：民族概览、文化特色、影像库、民族故事与互动专区。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+    <!-- 固定顶部导航栏 -->
+    <header class="site-header" id="siteHeader">
+        <div class="container header-inner">
+            <a href="#home" class="logo" aria-label="中国 56 民族文化馆 首页">
+                <div class="logo-mark" aria-hidden="true"></div>
+                <div class="logo-text">
+                    <span class="logo-title">中国 56 民族文化馆</span>
+                    <span class="logo-subtitle">探索每一个民族的独特魅力</span>
+                </div>
+            </a>
+
+            <nav class="main-nav" aria-label="主导航">
+                <ul class="nav-list">
+                    <li><a href="#home" class="nav-link">首页</a></li>
+                    <li class="has-dropdown">
+                        <a href="#overview" class="nav-link">56 民族全景</a>
+                        <div class="dropdown dropdown-wide">
+                            <div class="dropdown-col az">
+                                <span class="dropdown-title">按拼音首字母 A-Z</span>
+                                <div class="az-grid">
+                                    <div class="az-group"><span class="az-key">A</span><a href="#minzu/achangzu" class="dropdown-link">阿昌族</a><a href="#minzu/ewenkezu" class="dropdown-link">鄂温克族</a><a href="#minzu/eluosizu" class="dropdown-link">俄罗斯族</a></div>
+                                    <div class="az-group"><span class="az-key">B</span><a href="#minzu/baizu" class="dropdown-link">白族</a><a href="#minzu/baoanzu" class="dropdown-link">保安族</a><a href="#minzu/bulangzu" class="dropdown-link">布朗族</a></div>
+                                    <div class="az-group"><span class="az-key">C</span><a href="#minzu/chaoxianzu" class="dropdown-link">朝鲜族</a><a href="#minzu/zangzu" class="dropdown-link">藏族</a><a href="#minzu/dawoerzu" class="dropdown-link">达斡尔族</a></div>
+                                    <div class="az-group"><span class="az-key">D</span><a href="#minzu/dongxiangzu" class="dropdown-link">东乡族</a></div>
+                                    <div class="az-group"><span class="az-key">E</span><a href="#minzu/elunchunzu" class="dropdown-link">鄂伦春族</a></div>
+                                    <div class="az-group"><span class="az-key">H</span><a href="#minzu/hasakezu" class="dropdown-link">哈萨克族</a><a href="#minzu/huizu" class="dropdown-link">回族</a></div>
+                                    <div class="az-group"><span class="az-key">M</span><a href="#minzu/manzu" class="dropdown-link">满族</a><a href="#minzu/mengguzu" class="dropdown-link">蒙古族</a><a href="#minzu/miaozu" class="dropdown-link">苗族</a></div>
+                                    <div class="az-group"><span class="az-key">T</span><a href="#minzu/tujiazu" class="dropdown-link">土家族</a><a href="#minzu/tajikezu" class="dropdown-link">塔吉克族</a></div>
+                                    <div class="az-group"><span class="az-key">W</span><a href="#minzu/weiwuerzu" class="dropdown-link">维吾尔族</a><a href="#minzu/wazu" class="dropdown-link">佤族</a></div>
+                                    <div class="az-group"><span class="az-key">Y</span><a href="#minzu/yaozu" class="dropdown-link">瑶族</a><a href="#minzu/yizu" class="dropdown-link">彝族</a></div>
+                                    <div class="az-group"><span class="az-key">Z</span><a href="#minzu/zhuangzu" class="dropdown-link">壮族</a><a href="#minzu/zangzu" class="dropdown-link">藏族</a></div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li><a href="#gallery" class="nav-link">文化影像库</a></li>
+                    
+                    <li><a href="#ai" class="nav-link" data-open-chat>AI 文化助手</a></li>
+                    <li><a href="#about" class="nav-link">关于我们</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <form class="search" role="search" aria-label="站内搜索" onsubmit="return false;">
+                    <input type="search" id="searchInput" placeholder="搜索民族名称" aria-label="搜索民族名称" autocomplete="off">
+                    <button type="button" id="searchBtn" aria-label="搜索">
+                        <span class="icon-search" aria-hidden="true"></span>
+                    </button>
+                    <ul class="search-suggest" id="searchSuggest" role="listbox" aria-label="联想检索" hidden></ul>
+                </form>
+                
+                <button class="hamburger" id="hamburger" aria-label="展开导航" aria-controls="mobileNav" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 移动端全屏导航 -->
+        <nav class="mobile-nav" id="mobileNav" aria-label="移动端导航">
+            <ul>
+                <li><a href="#home">首页</a></li>
+                <li class="mobile-group">
+                    <details open>
+                        <summary>56 民族索引</summary>
+                        <div class="az-mobile">
+                            <a href="#overview">A</a>
+                            <a href="#overview">B</a>
+                            <a href="#overview">C</a>
+                            <a href="#overview">D</a>
+                            <a href="#overview">E</a>
+                            <a href="#overview">F</a>
+                            <a href="#overview">G</a>
+                            <a href="#overview">H</a>
+                            <a href="#overview">J</a>
+                            <a href="#overview">K</a>
+                            <a href="#overview">L</a>
+                            <a href="#overview">M</a>
+                            <a href="#overview">N</a>
+                            <a href="#overview">P</a>
+                            <a href="#overview">Q</a>
+                            <a href="#overview">R</a>
+                            <a href="#overview">S</a>
+                            <a href="#overview">T</a>
+                            <a href="#overview">W</a>
+                            <a href="#overview">X</a>
+                            <a href="#overview">Y</a>
+                            <a href="#overview">Z</a>
+                        </div>
+                    </details>
+                </li>
+                <li><a href="#gallery">文化影像库</a></li>
+                
+                <li><a href="#" data-open-chat>AI 文化助手</a></li>
+                <li><a href="#about">关于我们</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="home" tabindex="-1">
+        <!-- Banner 轮播区 -->
+        <section class="banner" aria-label="首页轮播">
+            <div class="banner-slides" id="bannerSlides">
+                <div class="slide active" data-theme-color="#1f4e79" data-slug="preview1">
+                    <img src="images/preview1.jpg" alt="民族文化预览图1">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <h2 class="slide-title">民族文化的瑰宝</h2>
+                        <p class="slide-sub">探索各民族独特的文化魅力与传承</p>
+                    </div>
+                </div>
+                <div class="slide" data-theme-color="#7a3b2e" data-slug="preview2">
+                    <img src="images/preview2.jpg" alt="民族文化预览图2">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <h2 class="slide-title">传统与现代的融合</h2>
+                        <p class="slide-sub">感受民族文化在新时代的活力与创新</p>
+                    </div>
+                </div>
+                <div class="slide" data-theme-color="#a68a64" data-slug="preview3">
+                    <img src="images/preview3.png" alt="民族文化预览图3">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <h2 class="slide-title">多元文化的精彩</h2>
+                        <p class="slide-sub">领略56个民族丰富多彩的文化内涵</p>
+                    </div>
+                </div>
+            </div>
+            <div class="banner-controls" aria-label="轮播控制器">
+                <button class="banner-prev" id="bannerPrev" aria-label="上一张">&lt;</button>
+                <button class="banner-next" id="bannerNext" aria-label="下一张">&gt;</button>
+            </div>
+            <div class="scroll-down" aria-hidden="true">
+                <div class="chevron"></div>
+                <div class="txt">Scroll</div>
+            </div>
+        </section>
+
+        <!-- 民族速览 -->
+        <section id="overview" class="section overview" aria-labelledby="overviewTitle">
+            <div class="container">
+                <header class="section-header">
+                    <h3 id="overviewTitle" class="title-serif">56 民族速览</h3>
+                    <p class="subtitle">一张卡片，认识一个民族</p>
+                </header>
+                <div class="az-filter" id="overviewAZ"></div>
+                <div class="card-grid" id="overviewGrid"></div>
+                <div class="pagination" id="overviewPager"></div>
+            </div>
+        </section>
+
+        <!-- 文化影像库（深色背景） -->
+        <section id="gallery" class="section gallery" aria-labelledby="galleryTitle">
+            <div class="container">
+                <header class="section-header light">
+                    <h3 id="galleryTitle" class="title-sans">文化影像库</h3>
+                    <p class="subtitle">定格民族文化的精彩瞬间</p>
+                </header>
+                <div class="masonry" id="masonry">
+                    <!-- 瀑布流图片稍后通过 JS/静态元素填充 -->
+                </div>
+                <div class="pagination" id="galleryPager"></div>
+            </div>
+        </section>
+
+        
+
+        
+
+        <!-- 关于我们 / Footer 顶部区块（语义隔离） -->
+        <section id="about" class="section about" aria-labelledby="aboutTitle">
+            <div class="container">
+                <header class="section-header">
+                    <h3 id="aboutTitle" class="title-serif">关于我们</h3>
+                    <p class="subtitle">致力于以尊重、传承、交融的方式展示民族文化之美。</p>
+                </header>
+                
+            </div>
+        </section>
+    </main>
+
+    <!-- 民族专属详情页视图（hash: #minzu/<pinyin>） -->
+    <section id="detailView" class="detail-view" hidden aria-labelledby="detailTitle">
+        <div class="detail-banner">
+            <img id="detailBannerImg" alt="民族封面">
+            <div class="detail-banner-mask"></div>
+            <div class="detail-banner-text">
+                <h2 id="detailTitle" class="title-serif">民族名称</h2>
+                <p id="detailSlogan">文化 Slogan</p>
+            </div>
+            <button class="detail-back" id="detailBack" aria-label="返回首页">返回</button>
+        </div>
+
+        <div class="container detail-body">
+            <div class="detail-section">
+                <h3 class="title-serif">民族概况</h3>
+                <div class="detail-two-col">
+                    <div>
+                        <ul class="desc-list" id="detailFacts">
+                            <!-- 动态填充：人口与分布、语言文字、历史渊源 -->
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="placeholder-graph">
+                            <img src="images/民族分布地图.jpg" alt="民族分布地图" style="width: 100%; height: auto; border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h3 class="title-serif">文化特色</h3>
+                <div class="feature-grid">
+                    <div class="feature-card"><div class="feature-img" id="featAttire"></div><div class="feature-text" id="featAttireText">服饰（占位）</div></div>
+                    <div class="feature-card"><div class="feature-img" id="featArch"></div><div class="feature-text" id="featArchText">建筑（占位）</div></div>
+                    <div class="feature-card"><div class="feature-img" id="featFestival"></div><div class="feature-text" id="featFestivalText">节日（占位）</div></div>
+                    <div class="feature-card"><div class="feature-img" id="featFood"></div><div class="feature-text" id="featFoodText">饮食（占位）</div></div>
+                </div>
+            </div>
+
+
+            
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="site-footer" aria-labelledby="footerTitle">
+            <div class="container footer-grid">
+            <div>
+                <h5>快速链接</h5>
+                <ul class="footer-links">
+                    <li><a href="#home">首页</a></li>
+                    <li><a href="#overview">56 民族全景</a></li>
+                    <li><a href="#gallery">文化影像库</a></li>
+                    
+                    <li><a href="#" data-open-chat>AI 文化助手</a></li>
+                </ul>
+            </div>
+            <div>
+                <h5>56 民族索引</h5>
+                <p class="az-links">
+                    <a href="#overview">A</a>
+                    <a href="#overview">B</a>
+                    <a href="#overview">C</a>
+                    <a href="#overview">D</a>
+                    <a href="#overview">E</a>
+                    <a href="#overview">F</a>
+                    <a href="#overview">G</a>
+                    <a href="#overview">H</a>
+                    <a href="#overview">J</a>
+                    <a href="#overview">K</a>
+                    <a href="#overview">L</a>
+                    <a href="#overview">M</a>
+                    <a href="#overview">N</a>
+                    <a href="#overview">P</a>
+                    <a href="#overview">Q</a>
+                    <a href="#overview">R</a>
+                    <a href="#overview">S</a>
+                    <a href="#overview">T</a>
+                    <a href="#overview">W</a>
+                    <a href="#overview">X</a>
+                    <a href="#overview">Y</a>
+                    <a href="#overview">Z</a>
+                </p>
+                <p>©2024 中国 56 民族文化馆 | 禁止未经授权转载</p>
+            </div>
+        </div>
+        <div class="footer-note">
+            本网站照片均来自正规版权渠道或用户投稿，旨在传播民族文化，若有侵权请联系删除 | 网站内容仅供文化交流，不代表官方立场
+        </div>
+    </footer>
+
+    <!-- 悬浮 AI 助手按钮 -->
+    <button class="chat-fab" id="chatFab" aria-label="民族文化 AI 助手">
+        <span class="fab-icon" aria-hidden="true">问</span>
+    </button>
+
+    <!-- AI 聊天弹窗（稍后用 JS 控制显示/隐藏） -->
+    <div class="chat-modal" id="chatModal" role="dialog" aria-modal="true" aria-labelledby="chatTitle" hidden>
+        <div class="chat-window">
+            <header class="chat-header">
+                <div class="chat-title">
+                    <span class="chat-logo" aria-hidden="true"></span>
+                    <strong id="chatTitle">民族文化 AI 助手</strong>
+                    <span class="chat-sub">解答你的民族文化疑问</span>
+                </div>
+                <div class="chat-tools">
+                    <button class="chat-tool" id="chatMin" title="收起">—</button>
+                    <button class="chat-tool" id="chatClear" title="清除记录">🗑</button>
+                    <button class="chat-tool" id="chatHelp" title="使用指南">?</button>
+                    <button class="chat-tool" id="chatClose" title="关闭">×</button>
+                </div>
+            </header>
+            <div class="chat-body" id="chatBody" aria-live="polite">
+                <div class="chat-placeholder">
+                    欢迎咨询民族文化 AI 助手！你可以问我“傣族泼水节的由来”“藏族酥油茶怎么做”等问题～
+                </div>
+            </div>
+            <footer class="chat-inputbar">
+                <div class="chat-input-wrap">
+                    <textarea id="chatInput" rows="1" placeholder="请输入你的问题（例如：‘壮族三月三有什么习俗？’）"></textarea>
+                </div>
+                <div class="chat-actions">
+                    <button class="chat-emoji" id="chatEmoji" title="表情">☺</button>
+                    <button class="chat-send" id="chatSend" title="发送" disabled>
+                        <span class="paper-plane" aria-hidden="true"></span>
+                    </button>
+
+
+
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="gallery_images.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
