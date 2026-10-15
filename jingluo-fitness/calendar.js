@@ -17,7 +17,7 @@ const prefs=()=>C.settings(read().prefs[scopeNow]);
 const label=n=>n===1440?"前一天":`课前 ${n} 分钟`;
 const time=ms=>new Intl.DateTimeFormat("zh-CN",{timeZone:C.TZ,hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(ms);
 const short=d=>`${Number(d.slice(5,7))}月${Number(d.slice(8))}日`;
-const button=(t,a,id="",extra="")=>`<button class="jl-btn" data-jl="${a}" data-jl-id="${esc(id)}" ${extra}>${t}</button>`;
+const button=(t,a,id="",extra="")=>`<button type="button" class="jl-btn" data-jl="${a}" data-jl-id="${esc(id)}" ${extra}>${t}</button>`;
 function view(){if(!views.has(scopeNow)){const next=getEvents().find(e=>C.active(e,Date.now())),d=next&&next.date<=C.shift(C.day(),7)?next.date:C.day();views.set(scopeNow,{mode:"week",date:d,selected:d,kind:"all",coach:"all",cancel:false});}return views.get(scopeNow);}
 function filtered(){const u=view();return getEvents().filter(e=>(u.cancel||e.status!=="cancel")&&(u.kind==="all"||e.kind===u.kind)&&(context().role!=="admin"||u.coach==="all"||e.coach===u.coach));}
 function stateText(e){return e.status==="cancel"?"已取消":e.status==="done"?"已核销":e.end<=Date.now()?"已结束":e.start<=Date.now()?"进行中":e.status==="open"?"待预约":"待上课";}
@@ -67,7 +67,7 @@ function showSettings(){
 }
 async function worker(){
  if(reg?.active)return reg;
- const r=await navigator.serviceWorker.register("./calendar-sw.js?v=20261015-calendar-1",{scope:"./"});
+ const r=await navigator.serviceWorker.register("./calendar-sw.js?v=20261015-calendar-2",{scope:"./"});
  if(r.active){reg=r;return r;}const w=r.installing||r.waiting;
  if(!w)throw Error("通知组件尚未就绪");
  await new Promise((ok,fail)=>{const timer=setTimeout(()=>fail(Error("通知组件启动超时")),12000);w.addEventListener("statechange",()=>{if(w.state==="activated"){clearTimeout(timer);ok();}else if(w.state==="redundant"){clearTimeout(timer);fail(Error("通知组件不可用"));}});});
