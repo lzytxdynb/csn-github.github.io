@@ -1,0 +1,13 @@
+{
+  "version": "20261018-ops-1",
+  "logicTests": {"total":45,"passed":45,"failed":0,"newBusinessRules":27,"calendarRegression":18},
+  "isolatedBrowserChecks": {"total":37,"passed":37,"failed":0,"newOperations":16,"calendarRegression":21,"viewportWidths":[390,1440]},
+  "browserScope": "Exact published JS/CSS with an in-memory localStorage adapter and inline logo; network navigation blocked by browser administrative policy. Permission denial in calendar tests uses a mock.",
+  "publicHttpVerified": false,
+  "publicThreeRoleClicksVerified": false,
+  "productionCspVerified": false,
+  "realPersistenceVerified": false,
+  "nativeWeChatUpdated": false,
+  "realPaymentsOrMessagesEnabled": false,
+  "notes": ["The existing day/week/month calendars are retained.","Upcoming-reminder reschedule fixture sets a 5-minute cancellation cutoff; shipped default is 120 minutes.","No user database, API secrets or real health data included."]
+}
