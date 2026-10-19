@@ -12,7 +12,7 @@ const T={
  pending_exists:'该课卡已有待审批申请',not_pending:'申请已处理，请刷新后查看',not_booked:'预约状态已变更',
  checkin_window:'核销仅在开课前15分钟至结束后48小时开放',not_completed:'完成核销后才能写课后记录',
  invalid_extension:'新有效期必须晚于原日期且在未来3年内',invalid_days:'冻结天数必须为1至30的整数',
- invalid_rules:'预约提前5至1440分钟；退改提前5至10080分钟',duplicate_booking:'不能重复预约同一节课',insufficient_credit:'课时不足',full:'课程名额已满',different_kind:'只能改约同类课程',past_slot:'新课程必须晚于当前时间'
+ invalid_rules:'预约提前5至1440分钟；退改提前5至10080分钟',duplicate_booking:'不能重复预约同一节课',insufficient_credit:'课时不足',full:'课程名额已满',different_kind:'只能改约同类课程',past_slot:'新课程必须晚于当前时间',class_cancelled:'该课程已由门店停课',already_cancelled:'该课程已停课，不能再次执行返还',class_started:'课程已经开始，不能从演示流程直接停课',completed_bookings:'已有核销完成的学员，不能直接停课覆盖历史记录',missing_slot:'课程不存在或已经修改',invalid_reason:'请选择预设的停课原因'
 };
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const translate=e=>T[e.message]||'操作未完成，请检查输入或本地存储权限（'+e.message+'）';
@@ -34,7 +34,14 @@ function refresh(){
  html+=`<details class="gym-requests" ${requests.some(r=>r.status==='pending')?'open':''}><summary>冻结申请与审批（${requests.filter(r=>r.status==='pending').length}条待处理）</summary>`;
  html+=requests.length?requests.slice(0,20).map(r=>`<div class="gym-request"><div><b>${T[r.kind]} / ${r.days}天</b><p>${T[r.reason]} · ${T[r.status]}</p></div><div class="gym-actions">${r.status==='pending'?(role==='member'?button('withdraw','撤回',r.id):button('approve','批准',r.id)+button('reject','拒绝',r.id)):''}</div></div>`).join(''):'<p>暂无申请。</p>';
  html+='</details>';
- if(role==='admin')html+='<div class="gym-actions">'+button('rules','设置门店预约规则')+'</div><p class="gym-note">只登记演示课卡权益，不代表收款或退款。审批不会自动取消预约。</p>';
+ if(role==='admin'){
+  html+='<div class="gym-actions">'+button('rules','设置门店预约规则')+'</div><p class="gym-note">只登记演示课卡权益，不代表收款或退款。审批不会自动取消预约。</p>';
+  html+='<details class="gym-requests" open><summary>门店停课与演示课时返还</summary><p class="gym-note">仅可停未开始且无已核销记录的课程。已预约记录标为门店停课，并返还演示课时；不发送微信消息、不处理真实资金。</p>';
+  for(const s of data.slots){const stopped=data.gym.cancelledClasses[s[0]];const pending=data.bookings.filter(b=>b.slot===s[0]&&b.status==='booked').length;
+   const ineligible=!stopped&&(C.interval(s)[0]<=Date.now()||data.bookings.some(b=>b.slot===s[0]&&b.status==='done'));
+   html+=`<div class="gym-request"><div><b>${esc(s[1])}</b><p>${esc(s[4])} ${esc(s[5])} · ${stopped?'已停课，已返还 '+stopped.refunded+' 课时':'有效预约 '+pending+' 人'}</p></div><div class="gym-actions">${stopped?'<span class="badge orange">已停课</span>':ineligible?'<span class="badge gray">已开课/已核销</span>':button('classCancel','停课及返还',s[0])}</div></div>`;
+  }html+='</details>';
+ }
  }else html+='<p class="gym-note">核销窗口：开课前15分钟至结束后48小时。只能处理当前演示教练的预约；不显示会员冻结原因。</p>';
  panel.innerHTML=html;const anchor=main.querySelector('.dashboard');if(anchor)anchor.after(panel);else main.append(panel);
 }
@@ -50,6 +57,7 @@ function action(a,id){
  if(a==='request')dialog('申请冻结 '+T[id],'<p class="gym-note">审批通过后生效。有未完成预约时，先取消或改约，不自动退课。</p><label class="form-field">冻结天数<input name="days" type="number" min="1" max="30" value="7" required></label><label class="form-field">原因<select name="reason"><option value="travel">行程冲突</option><option value="rest">暂停训练</option><option value="other">其他</option></select></label>',f=>execute('request',{kind:id,days:Number(f.get('days')),reason:f.get('reason')}));
  if(a==='approve'||a==='reject'||a==='withdraw')dialog(a==='approve'?'批准冻结':a==='reject'?'拒绝申请':'撤回申请','<p>此操作会留下演示操作记录。</p>',()=>execute(a==='withdraw'?'withdraw':'review',{id,decision:a==='approve'?'approve':'reject'}));
  if(a==='extend')dialog('登记延长有效期','<p class="gym-note">只修改演示权益日期，不追加课时或真实收款。</p><label class="form-field">新有效期<input name="expires" type="date" value="'+esc(C.day(C.midnight(d.gym.cards[id].expires)+30*C.DAY))+'" required></label>',f=>execute('extend',{kind:id,expires:f.get('expires')}));
+ if(a==='classCancel'){const s=d.slots.find(s=>s[0]===id);if(!s)throw Error('missing_slot');const n=d.bookings.filter(b=>b.slot===id&&b.status==='booked').length;dialog('门店停课 · '+s[1],'<p class="gym-note">'+esc(s[4]+' '+s[5])+' · 当前 '+n+' 条有效预约。确认后将把有效预约标记为取消，各返还1节演示课时；该操作不能在网页里恢复，且不会发送真实消息或退款。</p><label class="form-field">停课原因<select name="reason"><option value="coach_absence">教练临时请假</option><option value="venue">场地调整</option><option value="emergency">临时闭店</option><option value="other">其他门店原因</option></select></label>',f=>execute('classCancel',{slot:id,reason:f.get('reason')}));return;}
  if(a==='rules')dialog('门店预约规则','<p class="gym-note">新规则应用于此后的预约与退改操作，包括已有预约的退改。</p><label class="form-field">预约至少提前（分钟）<input name="bookingMinutes" type="number" min="5" max="1440" value="'+d.gym.policy.bookingMinutes+'" required></label><label class="form-field">退改至少提前（分钟）<input name="cancelMinutes" type="number" min="5" max="10080" value="'+d.gym.policy.cancelMinutes+'" required></label>',f=>execute('rules',{bookingMinutes:Number(f.get('bookingMinutes')),cancelMinutes:Number(f.get('cancelMinutes'))}));
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-gym]');if(!b)return;try{action(b.dataset.gym,b.dataset.gymId);}catch(err){bridge?.toast(translate(err));}});
