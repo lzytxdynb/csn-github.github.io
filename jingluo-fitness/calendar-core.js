@@ -26,7 +26,7 @@ function events(data,role,coach){
   const closed=Object.hasOwn(data.gym?.cancelledClasses||{},s[0]);
   return {id:b?"booking:"+b.id:"session:"+s[0],sid:s[0],bid:b?.id,title:String(s[1]),kind:s[2],coach:s[3],date:s[4],time:s[5],duration,start,end:start+duration*MIN,location:String(s[7]||"演示训练区"),capacity:s[6],count:bookings.length,status:closed?"cancel":b?b.status:bookings.length&&bookings.every(x=>x.status==="done")?"done":bookings.length?"booked":"open"};
  };
- const list=role==="member"?bs.map(b=>make(ss.get(b.slot),b)):[...ss.values()].filter(s=>role==="admin"||s[3]===coach).map(s=>make(s));
+ const list=role==="member"?bs.filter(b=>(b.memberId||"m1")===(data.demoMembers?.active||"m1")).map(b=>make(ss.get(b.slot),b)):[...ss.values()].filter(s=>role==="admin"||s[3]===coach).map(s=>make(s));
  return list.filter(Boolean).sort((a,b)=>a.start-b.start||a.id.localeCompare(b.id));
 }
 function active(e,now){return e.status!=="cancel"&&e.status!=="done"&&e.start>now;}

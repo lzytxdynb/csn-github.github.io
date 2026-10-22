@@ -7,10 +7,10 @@
 const C=window.JLCalendarCore,STORE="jingluo-calendar-v1",esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let bridge,scopeNow="",memory={v:1,prefs:{},seen:{},notices:[]},writable=true,busy=false,reg,dialog;
 const views=new Map(),names={member:"会员",coach:"教练",admin:"商家"},weekdays=["一","二","三","四","五","六","日"];
-const read=()=>{try{const x=JSON.parse(localStorage.getItem(STORE));if(x?.v===1&&x.prefs&&x.seen&&Array.isArray(x.notices))memory=x;}catch{}return memory;};
+const read=()=>{try{const x=JSON.parse(localStorage.getItem(STORE));if(x?.v===1&&x.prefs&&x.seen&&Array.isArray(x.notices)){if(x.prefs.member&&!x.prefs['member:m1'])x.prefs['member:m1']=x.prefs.member;for(const n of x.notices)if(n.scope==='member')n.scope='member:m1';for(const [k,v] of Object.entries(x.seen))if(k.startsWith('member|')){x.seen['member:m1'+k.slice(6)]=v;delete x.seen[k];}memory=x;}}catch{}return memory;};
 function write(s){s.notices=s.notices.slice(0,100);memory=s;try{localStorage.setItem(STORE,JSON.stringify(s));writable=true;}catch{writable=false;}}
 const context=()=>bridge?.get();
-const scopeOf=x=>C.scope(x.role,x.coach);
+const scopeOf=x=>x.role==='member'?'member:'+(x.data.demoMembers?.active||'m1'):C.scope(x.role,x.coach);
 const coachName=id=>context().coaches.find(c=>c[0]===id)?.[1]||"教练";
 const getEvents=()=>{const x=context();return C.events(x.data,x.role,x.coach);};
 const prefs=()=>C.settings(read().prefs[scopeNow]);

@@ -17,6 +17,7 @@ function migrate(d,now=Date.now()){
  if(d.gym.v!==1||!d.gym.cards||!Array.isArray(d.gym.requests)||!Array.isArray(d.gym.audit))fail('invalid_data');
  if(d.gym.cancelledClasses==null)d.gym.cancelledClasses={};
  if(typeof d.gym.cancelledClasses!=='object'||Array.isArray(d.gym.cancelledClasses))fail('invalid_data');
+ if(globalThis.JLDemoMembers)globalThis.JLDemoMembers.migrate(d);
  return d;
 }
 function cardStatus(d,kind,now=Date.now()){
@@ -25,27 +26,28 @@ function cardStatus(d,kind,now=Date.now()){
  return {state:expired?'expired':frozen?'frozen':'active',expires:c.expires,balance:balance(d,kind),days:Math.ceil((midnight(c.expires)+DAY-now)/DAY),resume:c.freeze?.until||null};
 }
 function guard(d,actor,action,p={},now=Date.now()){
- migrate(d,now);const r=actor?.role,coach=actor?.coach;
+ migrate(d,now);const r=actor?.role,coach=actor?.coach,who=d.demoMembers?.active||'m1',mine=b=>(b.memberId||'m1')===who;
  if(['issue','news','new','rules','review','extend','classCancel'].includes(action)&&r!=='admin')fail('admin_only');
  if(['reserve','change','cancel','request','withdraw','ticket'].includes(action)&&r!=='member')fail('member_only');
  if(['checkin','note'].includes(action)&&r!=='coach')fail('coach_only');
  if(action==='reserve'||action==='change'){
   const old=action==='change'?d.bookings.find(b=>b.id===p.booking):null;
-  if(action==='change'){if(!old||old.status!=='booked')fail('not_booked');guard(d,actor,'cancel',{booking:old.id},now);}
+  if(action==='change'){if(!old||old.status!=='booked'||!mine(old))fail('not_booked');guard(d,actor,'cancel',{booking:old.id},now);}
   const s=byId(d,p.slot);if(!s)fail('missing_slot');if(classCancelled(d,s[0]))fail('class_cancelled');const t=interval(s);
   if(t[0]-now<Math.max(1,d.gym.policy.bookingMinutes)*MIN)fail('booking_cutoff');
   const c=cardStatus(d,s[2],now);if(c.state!=='active')fail('card_'+c.state);if(t[0]>=midnight(c.expires)+DAY)fail('course_after_expiry');
   if(old&&byId(d,old.slot)?.[2]!==s[2])fail('different_kind');
   if(!old&&balance(d,s[2])<1)fail('insufficient_credit');
   const active=d.bookings.filter(b=>b.id!==old?.id&&b.status!=='cancel');
-  if(active.some(b=>b.slot===s[0]))fail('duplicate_booking');
+  if(active.some(b=>mine(b)&&b.slot===s[0]))fail('duplicate_booking');
   if(active.filter(b=>b.slot===s[0]).length>=s[6])fail('full');
-  if(active.some(b=>{const o=byId(d,b.slot);return o&&overlap(t,interval(o));}))fail('member_overlap');
+  if(active.some(b=>{if(!mine(b))return false;const o=byId(d,b.slot);return o&&overlap(t,interval(o));}))fail('member_overlap');
  }
  if(action==='cancel'){
-  const b=d.bookings.find(b=>b.id===p.booking);if(!b||b.status!=='booked')fail('not_booked');const s=byId(d,b.slot);if(!s)fail('missing_slot');
+  const b=d.bookings.find(b=>b.id===p.booking);if(!b||b.status!=='booked'||!mine(b))fail('not_booked');const s=byId(d,b.slot);if(!s)fail('missing_slot');
   if(interval(s)[0]-now<Math.max(1,d.gym.policy.cancelMinutes)*MIN)fail('cancel_cutoff');
  }
+ if(action==='ticket'){const b=d.bookings.find(x=>x.id===p.booking);if(!b||!mine(b))fail('not_owner');}
  if(action==='checkin'||action==='note'){
   const b=d.bookings.find(b=>b.id===p.booking),s=b&&byId(d,b.slot);if(!s||s[3]!==coach)fail('wrong_coach');
   if(action==='note'&&b.status!=='done')fail('not_completed');
@@ -83,7 +85,7 @@ function execute(input,actor,action,p={},now=Date.now()){
    if(!['approve','reject'].includes(p.decision))fail('invalid_decision');
    if(p.decision==='approve'){
     if(cardStatus(d,req.kind,now).state!=='active')fail('card_unavailable');const until=now+req.days*DAY;
-    if(d.bookings.some(b=>{const s=byId(d,b.slot);return b.status==='booked'&&s?.[2]===req.kind&&overlap(interval(s),[now,until]);}))fail('freeze_has_bookings');
+    if(d.bookings.some(b=>{const s=byId(d,b.slot);return (b.memberId||'m1')===(d.demoMembers?.active||'m1')&&b.status==='booked'&&s?.[2]===req.kind&&overlap(interval(s),[now,until]);}))fail('freeze_has_bookings');
     const c=d.gym.cards[req.kind];c.freeze={from:now,until};c.expires=day(midnight(c.expires)+req.days*DAY);req.status='approved';req.until=until;
    }else req.status='rejected';
   }
@@ -93,7 +95,7 @@ function execute(input,actor,action,p={},now=Date.now()){
   if(t<=midnight(c.expires)||t<midnight(day(now))||t>now+3*366*DAY)fail('invalid_extension');c.expires=p.expires;audit(d,actor,'expiry_extended:'+p.kind+':'+p.expires,now);
  }else if(action==='classCancel'){
   const s=byId(d,p.slot),when=new Date(now).toISOString(),affected=d.bookings.filter(b=>b.slot===s[0]&&b.status==='booked');
-  for(const b of affected){b.status='cancel';b.cancelReason='merchant_class_cancel';b.refunded=true;b.cancelledAt=when;d[s[2]]+=1;}
+  for(const b of affected){b.status='cancel';b.cancelReason='merchant_class_cancel';b.refunded=true;b.cancelledAt=when;if(globalThis.JLDemoMembers)globalThis.JLDemoMembers.refund(d,b.memberId||'m1',s[2]);else d[s[2]]+=1;}
   const label={coach_absence:'教练临时请假',venue:'场地调整',emergency:'临时闭店',other:'其他门店原因'}[p.reason];
   d.gym.cancelledClasses[s[0]]={at:when,reason:p.reason,refunded:affected.length};
   d.news.unshift('【演示停课通知】'+s[1]+'（'+s[4]+' '+s[5]+'）因'+label+'停课，已预约课时在此浏览器内返还；本通知未发送给真实会员。');

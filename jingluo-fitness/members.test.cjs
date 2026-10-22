@@ -1,0 +1,25 @@
+'use strict';
+const assert=require('node:assert/strict');
+const M=require('./members-core.js'),G=require('./gym-core.js'),C=require('./calendar-core.js');
+global.JLDemoMembers=M;
+const now=Date.parse('2026-10-22T00:00:00+08:00');
+const old={v:5,private:9,group:8,slots:[['s1','演示团课','group','c1','2026-12-12','10:00',2,'演示厅',60]],bookings:[{id:'b1',slot:'s1',status:'booked'}],logs:[],news:[]};
+let count=0;
+function test(name,fn){fn();count++;console.log('ok '+name)}
+const copy=x=>JSON.parse(JSON.stringify(x));
+let d=G.migrate(copy(old),now);M.migrate(d);
+test('legacy owner',()=>assert.equal(d.bookings[0].memberId,'m1'));
+test('legacy balance',()=>assert.equal(d.group,8));
+test('3 demo members',()=>assert.equal(M.list(d).length,3));
+test('switch m2',()=>{M.select(d,'m2');assert.equal(d.group,5)});
+test('switch m1',()=>{M.select(d,'m1');assert.equal(d.group,8)});
+test('separate cards',()=>{M.select(d,'m2');d.gym.cards.group.expires='2027-01-01';M.sync(d);M.select(d,'m1');assert.notEqual(d.gym.cards.group.expires,'2027-01-01')});
+test('separate requests',()=>{M.select(d,'m2');d.gym.requests.push({id:'fake'});M.sync(d);M.select(d,'m1');assert.equal(d.gym.requests.length,0)});
+test('other member group seat',()=>{M.select(d,'m2');assert.equal(G.guard(d,{role:'member'},'reserve',{slot:'s1'},now),true)});
+test('same member duplicate',()=>{M.select(d,'m1');assert.throws(()=>G.guard(d,{role:'member'},'reserve',{slot:'s1'},now),/duplicate_booking/)});
+test('group capacity shared',()=>{const x=copy(d);x.bookings.push({id:'b2',slot:'s1',memberId:'m2',status:'booked'});M.select(x,'m3');assert.throws(()=>G.guard(x,{role:'member'},'reserve',{slot:'s1'},now),/full/)});
+test('foreign cancel blocked',()=>{const x=copy(d);x.bookings.push({id:'b2',slot:'s1',memberId:'m2',status:'booked'});assert.throws(()=>G.guard(x,{role:'member'},'cancel',{booking:'b2'},now),/not_booked/)});
+test('foreign voucher blocked',()=>{const x=copy(d);x.bookings.push({id:'b2',slot:'s1',memberId:'m2',status:'booked'});assert.throws(()=>G.guard(x,{role:'member'},'ticket',{booking:'b2'},now),/not_owner/)});
+test('member calendar separated',()=>{const x=copy(d);x.bookings.push({id:'b2',slot:'s1',memberId:'m2',status:'booked'});M.select(x,'m2');assert.deepEqual(C.events(x,'member','c1').map(e=>e.bid),['b2'])});
+test('class stop refunds each account',()=>{const x=copy(d);x.bookings.push({id:'b2',slot:'s1',memberId:'m2',status:'booked'});M.select(x,'m2');const a=x.demoMembers.accounts.find(a=>a.id==='m1').group,b=x.group,z=G.execute(x,{role:'admin'},'classCancel',{slot:'s1',reason:'venue'},now);M.sync(z);assert.equal(z.demoMembers.accounts.find(a=>a.id==='m1').group,a+1);assert.equal(z.group,b+1);assert.equal(z.gym.cancelledClasses.s1.refunded,2);assert.throws(()=>G.execute(z,{role:'admin'},'classCancel',{slot:'s1',reason:'venue'},now),/already_cancelled/)});
+console.log('PASS',count,'member Node checks');
