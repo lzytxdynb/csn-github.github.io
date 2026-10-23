@@ -40,7 +40,7 @@ function guard(d,actor,action,p={},now=Date.now()){
   if(!old&&balance(d,s[2])<1)fail('insufficient_credit');
   const active=d.bookings.filter(b=>b.id!==old?.id&&b.status!=='cancel');
   if(active.some(b=>mine(b)&&b.slot===s[0]))fail('duplicate_booking');
-  if(active.filter(b=>b.slot===s[0]).length>=s[6])fail('full');
+  if(active.filter(b=>b.slot===s[0]).length+(globalThis.JLDemoWaitlist?globalThis.JLDemoWaitlist.reservedCount(d,s[0],now):0)>=s[6])fail('full');
   if(active.some(b=>{if(!mine(b))return false;const o=byId(d,b.slot);return o&&overlap(t,interval(o));}))fail('member_overlap');
  }
  if(action==='cancel'){
